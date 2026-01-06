@@ -1,1 +1,55 @@
-No code yet
+Leads Management System
+
+1. Tech Stack
+- Frontend: Next.js
+- Backend: Node.js
+- Hosting: Vercel
+- Version Control: GitHub
+
+2. Data Model
+- Profiles: id (PK), name, email (CK), companyId, password, gender, address, phone (CK), role, createdTime, lastEditedTime, isDeleted
+- Companies: id (PK), name, email (CK), phone, address, note, createdTime, lastEditedTime, isDeleted
+- Leads: id (PK), ownerUserId, assignedUserId, companyId, leadName, phone (CK), email (CK), status, location, note, createdTime, lastEditedTime, isDeleted
+- Comments: id (PK), leadId, companyId, commentText, createdByUserId, status, createdTime, lastEditedTime, isDeleted
+
+3. Roles & Permissions
+- SuperAdmin: Full CRUD on users, admins, companies; Get/Edit/Delete leads & comments.
+- Admin: CRUD on users, leads, comments within own company; View all admins in company.
+- User: Create/Edit leads in company; Delete own leads; View all company comments; Add/Edit/Delete own comments.
+
+4. Business Rules
+- Immutable: id, leadId, commentId, companyId, ownerUserId
+- Cascade Deletes: Lead → its comments; Company → all users, leads, comments
+- Soft Delete: isDeleted = true
+- Retention: Auto-purge after 30 days if isDeleted = true
+- Lists: Search (phone/email), pagination, sort/filter
+
+5. UI Structure
+- SuperAdmin
+  Sidebar: Companies, Leads, Comments, Admins, Users
+  Dashboard: Create Company, Admin, User
+- Admin
+  Sidebar: Leads, Comments, Admins, Users, My Leads, My Work
+  Dashboard: Create Lead, User
+- User
+  Sidebar: Leads, My Leads, My Work
+  Dashboard: Create Lead
+
+6. Pages & Actions
+- View Company: Details + admins, users, leads; Edit/Delete
+- View Admin: Details + comments; Edit/Delete (SuperAdmin only)
+- View Lead: Details + comments; Add comment, Edit; Delete (SuperAdmin/Admin/Owner)
+- View User: Details + comments; Edit/Delete
+- View Comment: Details; Edit/Delete (SuperAdmin/Admin/Owner)
+- Add Comment: leadId (fixed), status (dropdown, updates lead status), commentText
+- Edit Company: name, email, phone, address, note
+- Edit Admin: name, email, phone, password, gender, address
+- Edit Lead: leadName, assignedUserId, email, phone, status, location, note
+- Edit User: name, password, gender, address
+- Edit Comment: text, status
+
+7. Forms
+- Create Company: name, email, phone, address, note
+- Create Admin: name, email, companyId (dropdown), password, gender, address, phone
+- Create User: name, email, password, gender, address, phone
+- Create Lead: leadName, assignedUserId (dropdown of company admins/users), phone, email, status (default = New), location, note
