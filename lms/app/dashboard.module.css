@@ -16,13 +16,16 @@
     flex-direction: column;
     position: fixed;
     height: 100vh;
-    transition: all 0.3s ease;
-    z-index: 50;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 100;
 }
 
 .sidebarHeader {
     padding: 1.5rem;
     border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .brandLink {
@@ -41,12 +44,13 @@
 /* Action Buttons Styling */
 .actionGroup {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     align-items: center;
+    flex-wrap: nowrap;
 }
 
 .actionBtn {
-    padding: 6px 12px;
+    padding: 6px 10px;
     border-radius: 6px;
     font-size: 0.75rem;
     font-weight: 600;
@@ -56,6 +60,25 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    min-width: 32px;
+}
+
+.callBtn {
+    background: #ecfdf5;
+    color: #059669;
+}
+
+.callBtn:hover {
+    background: #d1fae5;
+}
+
+.whatsappBtn {
+    background: #f0fdf4;
+    color: #16a34a;
+}
+
+.whatsappBtn:hover {
+    background: #dcfce7;
 }
 
 .viewBtn {
@@ -96,7 +119,6 @@
     margin-top: auto;
 }
 
-
 .nav {
     flex: 1;
     padding: 1rem;
@@ -131,6 +153,8 @@
     margin-left: 260px;
     display: flex;
     flex-direction: column;
+    min-width: 0;
+    /* Prevents flex items from overflowing */
 }
 
 .header {
@@ -140,19 +164,36 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 2rem;
+    padding: 0 1.5rem;
     position: sticky;
     top: 0;
     z-index: 40;
 }
 
+.menuToggle {
+    display: none;
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+.mobileBrand {
+    display: none;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #2563eb;
+    text-decoration: none;
+}
+
 .content {
-    padding: 2.5rem 3rem;
+    padding: 2rem;
     flex: 1;
 }
 
 .footer {
-    padding: 1.5rem 2rem;
+    padding: 1.5rem;
     background: #ffffff;
     border-top: 1px solid #e2e8f0;
     color: #94a3b8;
@@ -161,10 +202,7 @@
 }
 
 .logoutBtn {
-    margin-top: auto;
-    margin-bottom: 1rem;
-    margin-left: 1rem;
-    margin-right: 1rem;
+    margin: 0.5rem 1rem 1rem 1rem;
     border: none;
     background: transparent;
     display: flex;
@@ -182,6 +220,88 @@
     background: #fef2f2;
 }
 
+/* Overlay for mobile */
+.overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 90;
+}
+
+/* Responsive Overrides */
+@media (max-width: 1024px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+
+    .sidebarActive {
+        transform: translateX(0);
+    }
+
+    .main {
+        margin-left: 0;
+    }
+
+    .menuToggle {
+        display: flex;
+        align-items: center;
+    }
+
+    .mobileBrand {
+        display: block;
+    }
+
+    .overlayActive {
+        display: block;
+    }
+
+    .breadcrumb {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .content {
+        padding: 1.25rem;
+    }
+
+    .tableToolbar {
+        padding: 1rem;
+    }
+
+    .formCard {
+        padding: 1.5rem;
+    }
+
+    .formGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .actionGroup {
+        gap: 4px;
+    }
+
+    .actionBtn {
+        padding: 4px 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .header {
+        padding: 0 1rem;
+    }
+
+    .userInfo {
+        display: none;
+        /* Hide profile on very small screens to make room for Brand */
+    }
+}
+
 /* Dashboard Form Styling */
 .formCard {
     background: #ffffff;
@@ -189,7 +309,7 @@
     border-radius: 20px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     border: 1px solid #f1f5f9;
-    max-width: 800px;
+    width: 100%;
 }
 
 .formTitle {
@@ -206,12 +326,6 @@
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
-}
-
-@media (max-width: 640px) {
-    .formGrid {
-        grid-template-columns: 1fr;
-    }
 }
 
 .formGroup {
@@ -241,6 +355,7 @@
     font-size: 0.9375rem;
     outline: none;
     transition: all 0.2s;
+    width: 100%;
 }
 
 .formInput:focus,
@@ -274,8 +389,9 @@
     background: #ffffff;
     border-radius: 16px;
     border: 1px solid #e2e8f0;
-    overflow: hidden;
+    overflow-x: auto;
     margin-top: 1.5rem;
+    -webkit-overflow-scrolling: touch;
 }
 
 .tableToolbar {
@@ -302,6 +418,8 @@
     border-collapse: collapse;
     text-align: left;
     font-size: 0.875rem;
+    min-width: 800px;
+    /* Force horizontal scroll on mobile for data integrity */
 }
 
 .dataTable th {
@@ -344,7 +462,6 @@
     cursor: not-allowed;
 }
 
-
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -357,24 +474,6 @@
     }
 }
 
-@media (max-width: 1024px) {
-    .content {
-        padding: 2rem;
-    }
-}
-
-@media (max-width: 768px) {
-    .sidebar {
-        width: 0;
-        transform: translateX(-100%);
-        visibility: hidden;
-    }
-
-    .main {
-        margin-left: 0;
-    }
-
-    .welcomeTitle {
-        font-size: 1.75rem;
-    }
+.dashboardFadeIn {
+    animation: fadeIn 0.4s ease forwards;
 }

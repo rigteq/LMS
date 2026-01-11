@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
@@ -14,6 +14,7 @@ export default function DashboardLayout({
 }) {
     const { user, isLoading } = useAuth();
     const router = useRouter();
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     useEffect(() => {
         if (!isLoading && !user) {
@@ -42,9 +43,17 @@ export default function DashboardLayout({
 
     return (
         <div className={styles.container}>
-            <Sidebar role={user.role} />
+            <Sidebar
+                role={user.role}
+                isOpen={isSidebarOpen}
+                onClose={() => setIsSidebarOpen(false)}
+            />
             <main className={styles.main}>
-                <Header userName={user.name} role={user.role} />
+                <Header
+                    userName={user.name}
+                    role={user.role}
+                    onMenuToggle={() => setIsSidebarOpen(prev => !prev)}
+                />
                 <div className={styles.content}>
                     {children}
                 </div>

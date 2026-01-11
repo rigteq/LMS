@@ -40,12 +40,25 @@ export default function DataTable({
 
     const formatValue = (val: any) => {
         if (val === null || val === undefined) return '-';
-        // Check if it's a date string (ISO format check)
         if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(val)) {
             const date = new Date(val);
             return isNaN(date.getTime()) ? val : date.toLocaleDateString();
         }
         return String(val);
+    };
+
+    const handleAction = (type: 'call' | 'whatsapp', phone: string) => {
+        try {
+            if (!phone) throw new Error("Phone number not available");
+            const cleanPhone = phone.replace(/\D/g, '');
+            if (type === 'call') {
+                window.location.href = `tel:${cleanPhone}`;
+            } else {
+                window.open(`https://wa.me/${cleanPhone}`, '_blank');
+            }
+        } catch (err: any) {
+            alert(err.message || "Could not perform action.");
+        }
     };
 
     return (
@@ -85,22 +98,46 @@ export default function DataTable({
                                 ))}
                                 <td>
                                     <div className={styles.actionGroup} style={{ justifyContent: 'flex-end' }}>
+                                        {row.phone && (
+                                            <>
+                                                <button
+                                                    onClick={() => handleAction('call', row.phone)}
+                                                    className={`${styles.actionBtn} ${styles.callBtn}`}
+                                                    title="Call"
+                                                >
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                                                </button>
+                                                <button
+                                                    onClick={() => handleAction('whatsapp', row.phone)}
+                                                    className={`${styles.actionBtn} ${styles.whatsappBtn}`}
+                                                    title="WhatsApp"
+                                                >
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-11.2h.1A8.38 8.38 0 0 1 21 11.5z"></path><path d="M16 8l-4 4 4 4"></path></svg>
+                                                </button>
+                                            </>
+                                        )}
                                         <button
                                             onClick={() => onView?.(row)}
-                                            className={`${styles.actionBtn} ${styles.viewBtn}`}>
+                                            className={`${styles.actionBtn} ${styles.viewBtn}`}
+                                            title="View"
+                                        >
                                             View
                                         </button>
                                         {onEdit && canEdit(row) && (
                                             <button
                                                 onClick={() => onEdit?.(row)}
-                                                className={`${styles.actionBtn} ${styles.editBtn}`}>
+                                                className={`${styles.actionBtn} ${styles.editBtn}`}
+                                                title="Edit"
+                                            >
                                                 Edit
                                             </button>
                                         )}
                                         {onDelete && canDelete(row) && (
                                             <button
                                                 onClick={() => onDelete?.(row)}
-                                                className={`${styles.actionBtn} ${styles.deleteBtn}`}>
+                                                className={`${styles.actionBtn} ${styles.deleteBtn}`}
+                                                title="Delete"
+                                            >
                                                 Delete
                                             </button>
                                         )}
