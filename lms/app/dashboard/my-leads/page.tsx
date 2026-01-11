@@ -44,40 +44,22 @@ export default function MyLeadsPage() {
     const handleDelete = async (row: any) => {
         if (!confirm(`Are you sure you want to delete lead: ${row.lead_name}?`)) return;
         try {
-            const { error } = await supabase
-                .from('leads')
-                .update({ is_deleted: true })
-                .eq('id', row.id);
-            if (error) throw error;
+            await supabase.from('leads').update({ is_deleted: true }).eq('id', row.id);
             setLeads(prev => prev.filter(l => l.id !== row.id));
-            alert("Lead deleted successfully.");
         } catch (err: any) {
-            alert(`Error deleting lead: ${err.message}`);
+            alert(err.message);
         }
     };
 
-    const handleEdit = (row: any) => {
-        alert("Edit lead coming soon!");
-    };
-
-    const handleView = (row: any) => {
-        alert("Viewing lead details...");
-    };
-
-    if (isLoading) return (
-        <div style={{ padding: '4rem', display: 'flex', justifyContent: 'center' }}>
-            <div className="loader"><span></span><span></span><span></span></div>
-        </div>
-    );
+    if (isLoading) return <div className="loader" style={{ padding: '4rem' }}><span></span><span></span><span></span></div>;
 
     return (
         <DataTable
-            title="My Created Leads"
+            title="My Registered Leads"
             columns={columns}
             data={leads}
-            onView={handleView}
-            onEdit={handleEdit}
             onDelete={handleDelete}
+            basePath="/dashboard/leads"
         />
     );
 }

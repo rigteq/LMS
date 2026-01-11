@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import styles from '@/app/dashboard.module.css';
 
 interface DataTableProps {
@@ -11,6 +12,7 @@ interface DataTableProps {
     onDelete?: (row: any) => void;
     canEdit?: (row: any) => boolean;
     canDelete?: (row: any) => boolean;
+    basePath?: string; // e.g. /dashboard/leads
 }
 
 export default function DataTable({
@@ -21,13 +23,14 @@ export default function DataTable({
     onEdit,
     onDelete,
     canEdit = () => true,
-    canDelete = () => true
+    canDelete = () => true,
+    basePath
 }: DataTableProps) {
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
+    const router = useRouter();
 
-    // Safe filtering logic
     const safeData = Array.isArray(data) ? data : [];
     const filteredData = safeData.filter(item =>
         Object.values(item || {}).some(val =>
@@ -59,6 +62,16 @@ export default function DataTable({
         } catch (err: any) {
             alert(err.message || "Could not perform action.");
         }
+    };
+
+    const handleView = (row: any) => {
+        if (onView) onView(row);
+        else if (basePath) router.push(`${basePath}/${row.id}`);
+    };
+
+    const handleEdit = (row: any) => {
+        if (onEdit) onEdit(row);
+        else if (basePath) router.push(`${basePath}/${row.id}/edit`);
     };
 
     return (
@@ -117,15 +130,15 @@ export default function DataTable({
                                             </>
                                         )}
                                         <button
-                                            onClick={() => onView?.(row)}
+                                            onClick={() => handleView(row)}
                                             className={`${styles.actionBtn} ${styles.viewBtn}`}
                                             title="View"
                                         >
                                             View
                                         </button>
-                                        {onEdit && canEdit(row) && (
+                                        {(onEdit || basePath) && canEdit(row) && (
                                             <button
-                                                onClick={() => onEdit?.(row)}
+                                                onClick={() => handleEdit(row)}
                                                 className={`${styles.actionBtn} ${styles.editBtn}`}
                                                 title="Edit"
                                             >

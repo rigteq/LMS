@@ -42,48 +42,33 @@ export default function MyWorkPage() {
     };
 
     const handleDelete = async (row: any) => {
+        // According to rules, user can only delete if they own the lead
+        if (row.owner_user_id !== user?.id) {
+            alert("Permission denied. You can only delete leads you originally registered.");
+            return;
+        }
+
         if (!confirm(`Are you sure you want to delete lead: ${row.lead_name}?`)) return;
         try {
-            const { error } = await supabase
-                .from('leads')
-                .update({ is_deleted: true })
-                .eq('id', row.id);
-            if (error) throw error;
+            await supabase.from('leads').update({ is_deleted: true }).eq('id', row.id);
             setLeads(prev => prev.filter(l => l.id !== row.id));
-            alert("Lead deleted successfully.");
         } catch (err: any) {
-            alert(`Error deleting lead: ${err.message}`);
+            alert(err.message);
         }
     };
 
-    const canDelete = (row: any) => {
-        if (user?.role === 'SuperAdmin' || user?.role === 'Admin') return true;
-        return row.owner_user_id === user?.id; // User can only delete if they created it
-    };
+    const canDelete = (row: any) => row.owner_user_id === user?.id;
 
-    const handleEdit = (row: any) => {
-        alert("Edit lead coming soon!");
-    };
-
-    const handleView = (row: any) => {
-        alert("Viewing lead details...");
-    };
-
-    if (isLoading) return (
-        <div style={{ padding: '4rem', display: 'flex', justifyContent: 'center' }}>
-            <div className="loader"><span></span><span></span><span></span></div>
-        </div>
-    );
+    if (isLoading) return <div className="loader" style={{ padding: '4rem' }}><span></span><span></span><span></span></div>;
 
     return (
         <DataTable
             title="My Assigned Work"
             columns={columns}
             data={leads}
-            onView={handleView}
-            onEdit={handleEdit}
             onDelete={handleDelete}
             canDelete={canDelete}
+            basePath="/dashboard/leads"
         />
     );
 }

@@ -6,11 +6,12 @@ import { useAuth } from '@/context/AuthContext';
 
 const columns = [
     { key: 'comment_text', label: 'Comment' },
-    { key: 'status', label: 'Status' },
-    { key: 'created_time', label: 'Date' },
+    { key: 'status', label: 'Lead Status' },
+    { key: 'author_name', label: 'Author' },
+    { key: 'lead_name', label: 'On Lead' },
 ];
 
-export default function CommentsPage() {
+export default function AllCommentsPage() {
     const [comments, setComments] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const { user } = useAuth();
@@ -24,7 +25,11 @@ export default function CommentsPage() {
     const fetchComments = async () => {
         setIsLoading(true);
         try {
-            let query = supabase.from('comments').select('*').eq('is_deleted', false);
+            let query = supabase.from('comments').select(`
+                *,
+                profiles!created_by_user_id(name),
+                leads!lead_id(lead_name)
+            `).eq('is_deleted', false);
 
             if (user?.role !== 'SuperAdmin') {
                 query = query.eq('company_id', user?.company_id);
@@ -32,7 +37,14 @@ export default function CommentsPage() {
 
             const { data, error } = await query.order('created_time', { ascending: false });
             if (error) throw error;
-            setComments(data || []);
+
+            const transformed = (data || []).map(c => ({
+                ...c,
+                author_name: c.profiles?.name || 'Unknown',
+                lead_name: c.leads?.lead_name || 'Deleted Lead'
+            }));
+
+            setComments(transformed);
         } catch (err) {
             console.error(err);
         } finally {
@@ -41,7 +53,7 @@ export default function CommentsPage() {
     };
 
     const handleDelete = async (row: any) => {
-        if (!confirm(`Are you sure you want to delete this comment?`)) return;
+        if (!confirm(`Delete this comment?`)) return;
 
         try {
             const { error } = await supabase
@@ -50,34 +62,20 @@ export default function CommentsPage() {
                 .eq('id', row.id);
 
             if (error) throw error;
-
             setComments(prev => prev.filter(c => c.id !== row.id));
-            alert("Comment deleted successfully.");
         } catch (err: any) {
             alert(`Error deleting comment: ${err.message}`);
         }
     };
 
-    const handleEdit = (row: any) => {
-        alert(`Editing Comment...`);
-    };
-
-    const handleView = (row: any) => {
-        alert(`Viewing details for this comment...`);
-    };
-
     const canEdit = (row: any) => {
-        if (user?.role === 'SuperAdmin') return true;
-        if (user?.role === 'Admin') return row.company_id === user.company_id;
-        if (user?.role === 'User') return row.created_by_user_id === user.id;
-        return false;
+        if (user?.role === 'SuperAdmin' || user?.role === 'Admin') return true;
+        return row.created_by_user_id === user?.id;
     };
 
     const canDelete = (row: any) => {
-        if (user?.role === 'SuperAdmin') return true;
-        if (user?.role === 'Admin') return row.company_id === user.company_id;
-        if (user?.role === 'User') return row.created_by_user_id === user.id;
-        return false;
+        if (user?.role === 'SuperAdmin' || user?.role === 'Admin') return true;
+        return row.created_by_user_id === user?.id;
     };
 
     if (isLoading) return (
@@ -91,11 +89,10 @@ export default function CommentsPage() {
             title="All Comments"
             columns={columns}
             data={comments}
-            onView={handleView}
-            onEdit={handleEdit}
             onDelete={handleDelete}
             canEdit={canEdit}
             canDelete={canDelete}
+            basePath="/dashboard/comments"
         />
     );
 }

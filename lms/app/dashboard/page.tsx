@@ -8,6 +8,7 @@ export default function DashboardPage() {
     const { user } = useAuth();
     const [assignableUsers, setAssignableUsers] = useState<any[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [formData, setFormData] = useState({
         leadName: '',
         phone: '',
@@ -28,7 +29,7 @@ export default function DashboardPage() {
     const fetchUsers = async () => {
         if (!user) return;
 
-        let query = supabase.from('profiles').select('id, name, role, company_id');
+        let query = supabase.from('profiles').select('id, name, role, company_id').eq('is_deleted', false);
 
         if (user.role !== 'SuperAdmin') {
             query = query.eq('company_id', user.company_id);
@@ -37,6 +38,10 @@ export default function DashboardPage() {
         const { data, error } = await query;
         if (data && !error) {
             setAssignableUsers(data);
+            // If the current assignedUserId is empty or not in the list, default to current user
+            if (!formData.assignedUserId && data.length > 0) {
+                setFormData(prev => ({ ...prev, assignedUserId: user.id }));
+            }
         }
     };
 
@@ -50,23 +55,24 @@ export default function DashboardPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
+        setStatusMessage(null);
 
-        const { error } = await supabase.from('leads').insert({
-            lead_name: formData.leadName,
-            phone: formData.phone,
-            email: formData.email,
-            location: formData.location,
-            note: formData.note,
-            status: formData.status,
-            assigned_user_id: formData.assignedUserId,
-            owner_user_id: user.id,
-            company_id: user.company_id
-        });
+        try {
+            const { error } = await supabase.from('leads').insert({
+                lead_name: formData.leadName,
+                phone: formData.phone,
+                email: formData.email,
+                location: formData.location,
+                note: formData.note,
+                status: formData.status,
+                assigned_user_id: formData.assignedUserId || user.id,
+                owner_user_id: user.id,
+                company_id: user.company_id
+            });
 
-        if (error) {
-            alert(`Error creating lead: ${error.message}`);
-        } else {
-            alert('Lead successfully created!');
+            if (error) throw error;
+
+            setStatusMessage({ type: 'success', text: 'Lead successfully created!' });
             setFormData({
                 leadName: '',
                 phone: '',
@@ -76,8 +82,11 @@ export default function DashboardPage() {
                 status: 'New',
                 assignedUserId: user.id,
             });
+        } catch (err: any) {
+            setStatusMessage({ type: 'error', text: err.message || 'Failed to create lead.' });
+        } finally {
+            setIsSubmitting(false);
         }
-        setIsSubmitting(false);
     };
 
     const statusOptions = [
@@ -116,13 +125,16 @@ export default function DashboardPage() {
                         <label className={styles.formLabel}>Assigned To</label>
                         <select
                             name="assignedUserId"
+                            required
                             className={styles.formSelect}
                             value={formData.assignedUserId}
                             onChange={handleInputChange}
                         >
-                            <option value="">Select User</option>
+                            {/* "Select User" option removed per Task 1 */}
                             {assignableUsers.map(u => (
-                                <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
+                                <option key={u.id} value={u.id}>
+                                    {u.name} ({u.role}) {u.id === user.id ? "(You)" : ""}
+                                </option>
                             ))}
                         </select>
                     </div>
@@ -191,6 +203,19 @@ export default function DashboardPage() {
                             onChange={handleInputChange}
                         ></textarea>
                     </div>
+
+                    {statusMessage && (
+                        <div className={styles.formGroupFull} style={{
+                            color: statusMessage.type === 'success' ? '#059669' : '#ef4444',
+                            background: statusMessage.type === 'success' ? '#f0fdf4' : '#fef2f2',
+                            padding: '1rem',
+                            borderRadius: '8px',
+                            border: `1px solid ${statusMessage.type === 'success' ? '#bbf7d0' : '#fecaca'}`,
+                            fontSize: '0.875rem'
+                        }}>
+                            {statusMessage.text}
+                        </div>
+                    )}
 
                     <div className={styles.formGroupFull}>
                         <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>

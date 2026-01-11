@@ -6,7 +6,8 @@ import { useAuth } from '@/context/AuthContext';
 
 const columns = [
     { key: 'comment_text', label: 'Comment' },
-    { key: 'status', label: 'Status' },
+    { key: 'status', label: 'Lead Status' },
+    { key: 'lead_name', label: 'On Lead' },
     { key: 'created_time', label: 'Date' },
 ];
 
@@ -26,13 +27,19 @@ export default function MyCommentsPage() {
         try {
             const { data, error } = await supabase
                 .from('comments')
-                .select('*')
+                .select('*, leads!lead_id(lead_name)')
                 .eq('created_by_user_id', user?.id)
-                .eq('is_deleted', false)
+                .is('is_deleted', false)
                 .order('created_time', { ascending: false });
 
             if (error) throw error;
-            setComments(data || []);
+
+            const trans = (data || []).map(c => ({
+                ...c,
+                lead_name: c.leads?.lead_name || 'Deleted Lead'
+            }));
+
+            setComments(trans);
         } catch (err) {
             console.error(err);
         } finally {
@@ -41,44 +48,24 @@ export default function MyCommentsPage() {
     };
 
     const handleDelete = async (row: any) => {
-        if (!confirm(`Are you sure you want to delete this comment?`)) return;
-
+        if (!confirm(`Delete this comment?`)) return;
         try {
-            const { error } = await supabase
-                .from('comments')
-                .update({ is_deleted: true })
-                .eq('id', row.id);
-
-            if (error) throw error;
+            await supabase.from('comments').update({ is_deleted: true }).eq('id', row.id);
             setComments(prev => prev.filter(c => c.id !== row.id));
-            alert("Comment deleted successfully.");
         } catch (err: any) {
-            alert(`Error deleting comment: ${err.message}`);
+            alert(err.message);
         }
     };
 
-    const handleEdit = (row: any) => {
-        alert("Edit functionality coming soon!");
-    };
-
-    const handleView = (row: any) => {
-        alert("Viewing comment details...");
-    };
-
-    if (isLoading) return (
-        <div style={{ padding: '4rem', display: 'flex', justifyContent: 'center' }}>
-            <div className="loader"><span></span><span></span><span></span></div>
-        </div>
-    );
+    if (isLoading) return <div className="loader" style={{ padding: '4rem' }}><span></span><span></span><span></span></div>;
 
     return (
         <DataTable
-            title="My Comments"
+            title="My Communication History"
             columns={columns}
             data={comments}
-            onView={handleView}
-            onEdit={handleEdit}
             onDelete={handleDelete}
+            basePath="/dashboard/comments"
         />
     );
 }

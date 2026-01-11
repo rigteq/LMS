@@ -41,24 +41,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             if (profileError) {
                 console.error("Profile query error:", profileError);
-                throw new Error("Could not find your user profile. Please contact support.");
+                throw new Error("User profile not found or access denied.");
             }
 
             if (!profile) {
-                throw new Error("User profile not found.");
+                throw new Error("Access restricted: Profile not active.");
             }
 
-            console.log("Profile loaded:", profile);
+            console.log("Profile successfully loaded:", profile);
             setUser(profile as User);
             return profile;
         } catch (err: any) {
-            console.error("Profile fetch exception:", err);
+            console.error("Critical Auth Error:", err);
             setError(err.message);
             return null;
         }
     };
 
     useEffect(() => {
+        let isMounted = true;
+
         async function getInitialSession() {
             try {
                 const { data: { session } } = await supabase.auth.getSession();
@@ -66,40 +68,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     await fetchProfile(session.user.id);
                 }
             } catch (e) {
-                console.error("Session check failed", e);
+                console.error("Initial session check failed", e);
             } finally {
-                setIsLoading(false);
+                if (isMounted) setIsLoading(false);
             }
         }
 
         getInitialSession();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log("Auth event:", event);
+            console.log("Auth State Changed:", event);
             if (session?.user) {
                 await fetchProfile(session.user.id);
             } else {
                 setUser(null);
             }
-            setIsLoading(false);
+            if (isMounted) setIsLoading(false);
         });
 
-        return () => subscription.unsubscribe();
+        return () => {
+            isMounted = false;
+            subscription.unsubscribe();
+        };
     }, []);
 
     const login = async (email: string, password = 'password123') => {
         setIsLoading(true);
         setError(null);
         try {
-            console.log("Attempting login for:", email);
+            console.log("Starting login process for:", email);
             const { data, error: loginError } = await supabase.auth.signInWithPassword({
                 email,
                 password,
             });
 
             if (loginError) {
-                if (loginError.message === 'Invalid login credentials') {
-                    throw new Error("Email or password incorrect.");
+                if (loginError.message.includes('Invalid login credentials')) {
+                    throw new Error("Invalid email or password.");
                 }
                 throw loginError;
             }
@@ -107,25 +112,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (data.user) {
                 const profile = await fetchProfile(data.user.id);
                 if (profile) {
-                    router.replace('/dashboard');
+                    console.log("Login successful, redirecting...");
+                    // Use window.location.href for a harder redirect if router.replace hangs on mobile
+                    window.location.href = '/dashboard';
                 }
             } else {
-                throw new Error("Login succeeded but no user data returned.");
+                throw new Error("Server communication failed during login.");
             }
         } catch (err: any) {
-            console.error("Login failure:", err);
-            setError(err.message);
-            // We use alert as a fallback for immediate feedback
-            alert(err.message);
-        } finally {
+            console.error("Login Step Failure:", err);
+            setError(err.message || "An unexpected error occurred.");
+            // Keep setIsLoading(false) so the button becomes active again
             setIsLoading(false);
         }
     };
 
     const logout = async () => {
-        await supabase.auth.signOut();
-        setUser(null);
-        router.replace('/');
+        setIsLoading(true);
+        try {
+            await supabase.auth.signOut();
+            setUser(null);
+            window.location.href = '/';
+        } catch (e) {
+            console.error("Logout error", e);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (

@@ -55,21 +55,11 @@ export default function LeadsPage() {
 
             // Update local state
             setLeads(prev => prev.filter(l => l.id !== row.id));
-            alert("Lead deleted successfully.");
         } catch (err: any) {
             alert(`Error deleting lead: ${err.message}`);
         }
     };
 
-    const handleEdit = (row: any) => {
-        alert(`Edit functionality for ${row.lead_name} is coming soon!`);
-    };
-
-    const handleView = (row: any) => {
-        alert(`Viewing details for ${row.lead_name}...`);
-    };
-
-    // Permissions based on lmstext.txt and user prompt
     const canEdit = (row: any) => {
         if (user?.role === 'SuperAdmin') return true;
         if (user?.role === 'Admin') return row.company_id === user.company_id;
@@ -95,11 +85,10 @@ export default function LeadsPage() {
             title="All Leads"
             columns={columns}
             data={leads}
-            onView={handleView}
-            onEdit={handleEdit}
             onDelete={handleDelete}
             canEdit={canEdit}
             canDelete={canDelete}
+            basePath="/dashboard/leads"
         />
     );
 }
