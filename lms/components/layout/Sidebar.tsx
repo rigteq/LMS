@@ -12,8 +12,10 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-    // SuperAdmin Tabs
+    // SuperAdmin Exclusive
     { label: 'All Companies', href: '/dashboard/companies', roles: ['SuperAdmin'] },
+
+    // Shared and Role-Specific Tabs
     { label: 'All Leads', href: '/dashboard/leads', roles: ['SuperAdmin', 'Admin', 'User'] },
     { label: 'All Comments', href: '/dashboard/comments', roles: ['SuperAdmin', 'Admin', 'User'] },
     { label: 'My Comments', href: '/dashboard/my-comments', roles: ['Admin', 'User'] },
@@ -27,7 +29,11 @@ export default function Sidebar({ role }: { role: string }) {
     const pathname = usePathname();
     const { logout } = useAuth();
 
-    const filteredItems = navItems.filter(item => item.roles.includes(role));
+    // Ensure we handle casing and potential undefined gracefully
+    const currentRole = role || 'User';
+    const filteredItems = navItems.filter(item =>
+        item.roles.some(r => r.toLowerCase() === currentRole.toLowerCase())
+    );
 
     return (
         <aside className={styles.sidebar}>
@@ -37,15 +43,21 @@ export default function Sidebar({ role }: { role: string }) {
                 </Link>
             </div>
             <nav className={styles.nav}>
-                {filteredItems.map((item, index) => (
-                    <Link
-                        key={`${item.href}-${index}`}
-                        href={item.href}
-                        className={`${styles.navItem} ${pathname === item.href ? styles.navItemActive : ''}`}
-                    >
-                        {item.label}
-                    </Link>
-                ))}
+                {filteredItems.length > 0 ? (
+                    filteredItems.map((item, index) => (
+                        <Link
+                            key={`${item.href}-${index}`}
+                            href={item.href}
+                            className={`${styles.navItem} ${pathname === item.href ? styles.navItemActive : ''}`}
+                        >
+                            {item.label}
+                        </Link>
+                    ))
+                ) : (
+                    <div style={{ padding: '1rem', color: '#94a3b8', fontSize: '0.8rem' }}>
+                        No menu items available for your role ({currentRole}).
+                    </div>
+                )}
             </nav>
 
             <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column' }}>

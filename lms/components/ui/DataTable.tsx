@@ -40,7 +40,8 @@ export default function DataTable({
 
     const formatValue = (val: any) => {
         if (val === null || val === undefined) return '-';
-        if (typeof val === 'string' && val.includes('T') && val.includes('Z')) {
+        // Check if it's a date string (ISO format check)
+        if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(val)) {
             const date = new Date(val);
             return isNaN(date.getTime()) ? val : date.toLocaleDateString();
         }
@@ -77,8 +78,8 @@ export default function DataTable({
                         </tr>
                     </thead>
                     <tbody>
-                        {paginatedData.map((row) => (
-                            <tr key={row.id || Math.random()}>
+                        {paginatedData.map((row, idx) => (
+                            <tr key={row.id || `row-${idx}`}>
                                 {columns.map(col => (
                                     <td key={col.key}>{formatValue(row[col.key])}</td>
                                 ))}
@@ -89,14 +90,14 @@ export default function DataTable({
                                             className={`${styles.actionBtn} ${styles.viewBtn}`}>
                                             View
                                         </button>
-                                        {canEdit(row) && (
+                                        {onEdit && canEdit(row) && (
                                             <button
                                                 onClick={() => onEdit?.(row)}
                                                 className={`${styles.actionBtn} ${styles.editBtn}`}>
                                                 Edit
                                             </button>
                                         )}
-                                        {canDelete(row) && (
+                                        {onDelete && canDelete(row) && (
                                             <button
                                                 onClick={() => onDelete?.(row)}
                                                 className={`${styles.actionBtn} ${styles.deleteBtn}`}>
