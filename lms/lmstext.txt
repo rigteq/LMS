@@ -9,7 +9,7 @@ Roles (SuperAdmin, Admin, User).
 Status (New, In Conversation, DNP, DND, Not Interested, Out of reach, Wrong details, Rejected, PO etc).
 
 Rules: 
-SuperAdmin can create get edit delete any user, admin, company. can get edit delete any lead or comment (not create).
+SuperAdmin can create get edit delete any user, admin, company, lead, comment.
 Admin can create get edit delete users, leads, comments from/in their company only. can get all admins from same company.
 User can create get edit leads from their company. Can see all comments and add comment to all company leads. can edit/delete own comments. can delete own leads.
 id, leadId, CommentId, companyId & OwnerUserId can never be changed after creation
@@ -25,11 +25,12 @@ All Admins(Contains list of admins with view admin, see comments by user, edit a
 All Users(Contains list of users with view user, see comments by user, edit and delete buttons),
 
 Superadmin Dashboard: 
-Create Company, Create Admin, Create User
+Create Company, Create Admin, Create User, Create Lead, 
 
 Admin sidebar tabs: 
 All leads (Contains list of leads from his company with view, edit and delete buttons), 
 All Comments (Contains list of comments from his company with view, edit and delete buttons), 
+My Comments (Contains list of comments created by user with view, edit and delete buttons)
 All Admins (Contains list of admins from his company with view admin buttons), 
 All Users (Contains list of users from his company with view user, see comments by user, edit and delete buttons)
 My Leads (Contains list of created leads with view lead, add comment, edit and delete buttons)
@@ -42,6 +43,8 @@ User sidebar tabs:
 All leads (Contains list of leads from his company with view, add comment and edit buttons), 
 My Leads (Contains list of created leads with view lead, add comment, edit and delete buttons)
 My Work (Contains list of assigned leads with view lead, add comment and edit buttons. delete button if owned lead)
+All Comments (Contains list of comments from his company with view, edit and delete buttons)
+My Comments (Contains list of comments created by user with view, edit and delete buttons)
 
 User Dashboard: 
 Create lead

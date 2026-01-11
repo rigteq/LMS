@@ -137,3 +137,34 @@ CREATE TRIGGER trg_soft_delete_leads AFTER UPDATE ON leads FOR EACH ROW EXECUTE 
 INSERT INTO companies (name, email, phone, address)
 VALUES ('LMS Tech', 'admin@lms.com', '9876543210', 'Tech Park HQ')
 ON CONFLICT (email) DO NOTHING;
+
+-- 2. Create Auth Users (Explicitly providing ID to avoid null constraints)
+INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at, role, instance_id, aud, raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token, email_change, email_change_token_new, recovery_token)
+SELECT uuid_generate_v4(), 'superadmin@lms.com', crypt('password123', gen_salt('bf')), now(), 'authenticated', '00000000-0000-0000-0000-000000000000', 'authenticated', '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', ''
+WHERE NOT EXISTS (SELECT 1 FROM auth.users WHERE email = 'superadmin@lms.com');
+
+INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at, role, instance_id, aud, raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token, email_change, email_change_token_new, recovery_token)
+SELECT uuid_generate_v4(), 'admin@lms.com', crypt('password123', gen_salt('bf')), now(), 'authenticated', '00000000-0000-0000-0000-000000000000', 'authenticated', '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', ''
+WHERE NOT EXISTS (SELECT 1 FROM auth.users WHERE email = 'admin@lms.com');
+
+INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at, role, instance_id, aud, raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token, email_change, email_change_token_new, recovery_token)
+SELECT uuid_generate_v4(), 'user@lms.com', crypt('password123', gen_salt('bf')), now(), 'authenticated', '00000000-0000-0000-0000-000000000000', 'authenticated', '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', ''
+WHERE NOT EXISTS (SELECT 1 FROM auth.users WHERE email = 'user@lms.com');
+
+-- 3. Create Profiles linked to the above
+INSERT INTO profiles (id, name, email, company_id, gender, address, phone, role)
+SELECT 
+    u.id, 
+    CASE WHEN u.email = 'superadmin@lms.com' THEN 'Super Admin' WHEN u.email = 'admin@lms.com' THEN 'Branch Admin' ELSE 'Standard User' END,
+    u.email,
+    (SELECT id FROM companies WHERE email = 'admin@lms.com'),
+    CASE WHEN u.email = 'superadmin@lms.com' THEN 'Male' WHEN u.email = 'admin@lms.com' THEN 'Female' ELSE 'Other' END,
+    'Corporate Office',
+    CASE WHEN u.email = 'superadmin@lms.com' THEN '1234567890' WHEN u.email = 'admin@lms.com' THEN '0987654321' ELSE '5555555555' END,
+    CASE WHEN u.email = 'superadmin@lms.com' THEN 'SuperAdmin' WHEN u.email = 'admin@lms.com' THEN 'Admin' ELSE 'User' END
+FROM auth.users u
+WHERE u.email IN ('superadmin@lms.com', 'admin@lms.com', 'user@lms.com')
+ON CONFLICT (id) DO NOTHING;
+
+
+
