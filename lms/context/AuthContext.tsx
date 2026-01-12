@@ -30,6 +30,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const router = useRouter();
 
     const fetchProfile = async (userId: string) => {
+        // Prevent redundant fetches if the user is already loaded
+        if (user && user.id === userId) return user;
+
         try {
             console.log("Fetching profile for:", userId);
             const { data: profile, error: profileError } = await supabase
@@ -40,6 +43,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 .single();
 
             if (profileError) {
+                // Handle AbortErrors gracefully (e.g. navigation or aborted request)
+                const isAbort = profileError.message?.includes('AbortError') || profileError.name === 'AbortError';
+                if (isAbort) {
+                    console.log("Profile fetch aborted gracefully.");
+                    return null;
+                }
+
                 console.error("Profile query error:", profileError);
                 throw new Error("User profile not found or access denied.");
             }
@@ -52,8 +62,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(profile as User);
             return profile;
         } catch (err: any) {
-            console.error("Critical Auth Error:", err);
-            setError(err.message);
+            // Only set a critical error if it's not a standard abort
+            if (err.name !== 'AbortError' && !err.message?.includes('AbortError')) {
+                console.error("Critical Auth Error:", err);
+                setError(err.message);
+            } else {
+                console.log("Ignored AbortError in fetchProfile.");
+            }
             return null;
         }
     };
@@ -63,12 +78,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         async function getInitialSession() {
             try {
-                const { data: { session } } = await supabase.auth.getSession();
-                if (session?.user) {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                if (error) throw error;
+                if (session?.user && isMounted) {
                     await fetchProfile(session.user.id);
                 }
-            } catch (e) {
-                console.error("Initial session check failed", e);
+            } catch (e: any) {
+                // Suppress abort errors in initial check as they are usually transient or navigation-related
+                if (e.name !== 'AbortError' && !e.message?.includes('AbortError')) {
+                    console.error("Initial session check failed", e);
+                }
             } finally {
                 if (isMounted) setIsLoading(false);
             }
@@ -78,9 +97,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             console.log("Auth State Changed:", event);
-            if (session?.user) {
+            if (session?.user && isMounted) {
+                // Add a small delay or check to see if we already have the user to prevent double-firing fetch
                 await fetchProfile(session.user.id);
-            } else {
+            } else if (!session && isMounted) {
                 setUser(null);
             }
             if (isMounted) setIsLoading(false);
@@ -111,18 +131,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             if (data.user) {
                 const profile = await fetchProfile(data.user.id);
-                if (profile) {
+                // Even if fetchProfile returns null (aborted), check if user state was set by onAuthStateChange
+                // Use a functional update style or just check if the profile exists
+                if (profile || user) {
                     console.log("Login successful, redirecting...");
-                    // Use window.location.href for a harder redirect if router.replace hangs on mobile
                     window.location.href = '/dashboard';
+                    return;
+                } else {
+                    // This is a real error - profile really doesn't exist
+                    throw new Error("User profile registration not found.");
                 }
             } else {
                 throw new Error("Server communication failed during login.");
             }
         } catch (err: any) {
+            // Check if we are actually logged in despite the error (race condition)
+            if (user) {
+                console.warn("Login reported error but user state exists, redirecting anyway.");
+                window.location.href = '/dashboard';
+                return;
+            }
+
             console.error("Login Step Failure:", err);
             setError(err.message || "An unexpected error occurred.");
-            // Keep setIsLoading(false) so the button becomes active again
             setIsLoading(false);
         }
     };
